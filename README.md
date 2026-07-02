@@ -1,6 +1,18 @@
 # Mikro-Banka Çek Tahsilat Sistemi (PoC)
 
+<!-- mb-cila -->
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?logo=rabbitmq&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white) ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white) ![Node.js](https://img.shields.io/badge/Node.js-5FA04E?logo=nodedotjs&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white) ![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)
+
 > Bankalardaki **saatler/günler** süren manuel çek onayını, **event-driven + paralel pipeline + risk tabanlı dinamik rotalama** ile **1 saniyenin altına** indiren kanıt-of-konsept mimarisi. Ugreen NAS (Docker) üzerinde tek komutla ayağa kalkar.
+
+### ✨ Öne Çıkanlar
+
+- ⚡ **Gerçek paralellik** — RabbitMQ fanout ile AI/OCR imza doğrulama ve uyum/kara-liste taraması *aynı milisaniyede* çalışır.
+- 🎯 **Risk tabanlı kademeli onay** — STP oto-onay · tek yönetici onayı · genel müdür çift onayı; her çeke 0–100 risk skoru.
+- 🙋 **İnsan-döngüde onay** — canlı onay kuyruğu (Onayla / Reddet) + SLA geri sayımı; kimse dokunmazsa otomatik onay.
+- 📊 **Dürüst telemetri** — otomatik *sistem işlem süresi* (saniye-altı) ile *insan onay süresi* ayrı raporlanır.
+- 🔧 **Yeniden-derlemesiz kurallar** — risk eşikleri Redis'te; kod derlemeden canlı değiştirilebilir.
+- 🐳 **Tek komut kurulum** — `docker compose up -d --build` ile 7 servis (ARM/x86 NAS uyumlu).
 
 ---
 
