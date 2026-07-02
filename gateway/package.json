@@ -1,0 +1,15 @@
+{
+  "name": "mb-gateway",
+  "version": "1.0.0",
+  "description": "WebSocket + HTTP trigger + RabbitMQ fanout publisher",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.4",
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  }
+}

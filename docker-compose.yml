@@ -1,0 +1,141 @@
+# =============================================================================
+#  Mikro-Banka Çek Tahsilat Sistemi (PoC)
+#  Event-Driven / Paralel Pipeline / Risk Tabanlı Dinamik Rotalama
+#  Ugreen NAS (Docker) için optimize edilmiştir.
+# =============================================================================
+services:
+
+  # ---------------------------------------------------------------------------
+  #  Message Broker — RabbitMQ (Fanout + Topic Exchange)
+  # ---------------------------------------------------------------------------
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: mb-rabbitmq
+    hostname: mb-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-mikrobank}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-mikrobank123}
+    ports:
+      - "${RABBITMQ_UI_PORT:-15672}:15672"   # Yönetim arayüzü (opsiyonel)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 512m
+    networks: [mikrobank-net]
+
+  # ---------------------------------------------------------------------------
+  #  Redis — Hızlı Bakiye + Kara Liste Önbelleği
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7.2-alpine
+    container_name: mb-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    mem_limit: 256m
+    networks: [mikrobank-net]
+
+  # ---------------------------------------------------------------------------
+  #  Gateway (Node.js) — WebSocket + HTTP Trigger + Fanout Publisher
+  # ---------------------------------------------------------------------------
+  gateway:
+    build: ./gateway
+    container_name: mb-gateway
+    restart: unless-stopped
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-mikrobank}:${RABBITMQ_PASS:-mikrobank123}@rabbitmq:5672
+      PORT: 3000
+    ports:
+      - "${GATEWAY_PORT:-3000}:3000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    mem_limit: 192m
+    networks: [mikrobank-net]
+
+  # ---------------------------------------------------------------------------
+  #  AI & OCR Servisi (Python FastAPI) — İmza + Tutar Doğrulama
+  # ---------------------------------------------------------------------------
+  ai-ocr-service:
+    build: ./ai-ocr-service
+    container_name: mb-ai-ocr
+    restart: unless-stopped
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-mikrobank}:${RABBITMQ_PASS:-mikrobank123}@rabbitmq:5672
+      PORT: 8000
+    ports:
+      - "${AI_PORT:-8000}:8000"    # /health ve /metrics için
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    mem_limit: 384m
+    networks: [mikrobank-net]
+
+  # ---------------------------------------------------------------------------
+  #  Uyum (Compliance) Servisi (Node.js) — Kara Liste / Yaptırım Taraması
+  # ---------------------------------------------------------------------------
+  compliance-service:
+    build: ./compliance-service
+    container_name: mb-compliance
+    restart: unless-stopped
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-mikrobank}:${RABBITMQ_PASS:-mikrobank123}@rabbitmq:5672
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: 192m
+    networks: [mikrobank-net]
+
+  # ---------------------------------------------------------------------------
+  #  Risk Motoru (Node.js) — Aggregator + Dinamik Rotalama (STP)
+  # ---------------------------------------------------------------------------
+  risk-engine:
+    build: ./risk-engine
+    container_name: mb-risk-engine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-mikrobank}:${RABBITMQ_PASS:-mikrobank123}@rabbitmq:5672
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: 192m
+    networks: [mikrobank-net]
+
+  # ---------------------------------------------------------------------------
+  #  Frontend / Dashboard (nginx) — Görsel Operasyon İzleme Ekranı
+  # ---------------------------------------------------------------------------
+  frontend:
+    build: ./frontend
+    container_name: mb-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - gateway
+    mem_limit: 96m
+    networks: [mikrobank-net]
+
+volumes:
+  rabbitmq_data:
+  redis_data:
+
+networks:
+  mikrobank-net:
+    driver: bridge

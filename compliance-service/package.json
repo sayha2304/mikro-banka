@@ -1,0 +1,11 @@
+{
+  "name": "mb-compliance",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": { "start": "node index.js" },
+  "dependencies": {
+    "amqplib": "^0.10.4",
+    "ioredis": "^5.4.1"
+  }
+}

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mikro-Banka · Çek Tahsilat Operasyon Merkezi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ======================= ÜST BAR ======================= -->
+  <header class="appbar">
+    <div class="brand">
+      <div class="mark">₺</div>
+      <div class="brand-txt">
+        <span class="brand-name">MİKRO-BANKA</span>
+        <span class="brand-sub">Çek Tahsilat Operasyon Merkezi</span>
+      </div>
+    </div>
+    <div class="appbar-right">
+      <div class="conn"><span id="ws" class="wsdot off"></span><span id="wsLabel">Bağlanıyor…</span></div>
+      <button id="runBtn" class="btn-primary" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Yeni Çek Simüle Et
+      </button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- ======================= KPI ŞERİDİ ======================= -->
+    <section class="kpis">
+      <article class="kpi legacy">
+        <span class="eyebrow">Geleneksel Süreç</span>
+        <span class="clock">24:00:00</span>
+        <span class="foot">Şube → Genel Müdürlük → Uyum → Onay · zincirleme adımlar, günlerce bekleme</span>
+      </article>
+
+      <article class="kpi ours">
+        <span class="eyebrow">Sistem İşlem Süresi · Paralel Pipeline</span>
+        <div class="msline">
+          <span id="msValue" class="ms">0</span><span class="msunit">ms</span>
+          <span id="factor" class="factor">—</span>
+        </div>
+        <span id="oursNote" class="foot">Otomatik pipeline gecikmesi. İnsan onay süresi ayrı ölçülür.</span>
+      </article>
+
+      <article class="kpi stat">
+        <span class="eyebrow">İşlenen Çek</span>
+        <span id="kProcessed" class="num">0</span>
+        <span id="kStpRate" class="foot">Oto-onay (STP) oranı —</span>
+      </article>
+
+      <article class="kpi stat">
+        <span class="eyebrow">Hızlı Bakiye Havuzu</span>
+        <span id="kBalance" class="num money">₺50.000.000</span>
+        <span class="foot">Oto-onaylanan tutarlar havuzdan anında düşülür</span>
+      </article>
+    </section>
+
+    <!-- ======================= AKIŞ ======================= -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Canlı İşlem Akışı</h2>
+        <span class="tag">Event-Driven · RabbitMQ Fanout</span>
+      </div>
+
+      <div class="flow">
+        <div id="n-intake" class="stage">
+          <span class="stage-ic">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M10 13h5M10 16.5h5"/></svg>
+          </span>
+          <span class="stage-title">Çek Girişi</span>
+          <span id="m-intake" class="stage-meta">Bekleniyor</span>
+        </div>
+
+        <div class="fork"><span class="fork-tag">eş zamanlı</span></div>
+
+        <div class="lanes">
+          <div id="lane-ai" class="lane ai">
+            <div class="lane-top">
+              <span class="lane-name">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 1.5v3M15 1.5v3M9 19.5v3M15 19.5v3M1.5 9h3M1.5 15h3M19.5 9h3M19.5 15h3"/></svg>
+                AI / OCR — İmza &amp; Tutar Doğrulama
+              </span>
+              <span id="s-ai" class="lane-state">Beklemede</span>
+            </div>
+            <div class="track"><i id="f-ai" class="fill"></i></div>
+            <span id="d-ai" class="lane-detail">Beklemede</span>
+          </div>
+
+          <div id="lane-cmp" class="lane cmp">
+            <div class="lane-top">
+              <span class="lane-name">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>
+                Uyum — Kara Liste Taraması
+              </span>
+              <span id="s-cmp" class="lane-state">Beklemede</span>
+            </div>
+            <div class="track"><i id="f-cmp" class="fill"></i></div>
+            <span id="d-cmp" class="lane-detail">Beklemede</span>
+          </div>
+        </div>
+
+        <div class="merge"></div>
+
+        <div id="n-risk" class="stage">
+          <span class="stage-ic">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>
+          </span>
+          <span class="stage-title">Risk Motoru</span>
+          <span id="m-risk" class="stage-meta">Beklemede</span>
+        </div>
+
+        <div id="n-decision" class="stage decision">
+          <span class="stage-ic">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="10" r="6"/><path d="M9.5 10l1.8 1.8L15 8.2"/><path d="M9 15.5L7.5 22l4.5-2 4.5 2L15 15.5"/></svg>
+          </span>
+          <span class="stage-title">Karar</span>
+          <span id="m-decision" class="stage-meta">Beklemede</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= ONAY KUYRUĞU ======================= -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Yönetici Onay Kuyruğu</h2>
+        <span id="queueCount" class="tag">0 bekleyen</span>
+      </div>
+      <div id="queue" class="queue">
+        <div id="queueEmpty" class="queue-empty">
+          Onay bekleyen işlem yok. Yüksek tutarlı veya düşük skorlu çekler otomatik olarak buraya düşer.
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= LEDGER ======================= -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Son İşlemler</h2>
+        <span id="counts" class="tag">STP: 0 · Yönetici: 0 · G.Müdür: 0 · Red: 0</span>
+      </div>
+      <div class="table-wrap">
+        <table class="ledger">
+          <thead>
+            <tr>
+              <th>Çek No</th>
+              <th>Keşideci</th>
+              <th class="num">Tutar</th>
+              <th class="num">Findeks</th>
+              <th>Risk</th>
+              <th>Karar</th>
+              <th class="num">Süre</th>
+            </tr>
+          </thead>
+          <tbody id="log">
+            <tr id="empty"><td colspan="7" class="empty">Henüz işlem yok. “Yeni Çek Simüle Et”e basın.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot-bar">
+    Mikro-Banka Çek Tahsilat Sistemi · PoC — RabbitMQ Fanout · Redis · FastAPI · Node.js
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

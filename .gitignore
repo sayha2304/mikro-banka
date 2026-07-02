@@ -1,0 +1,15 @@
+# Bağımlılıklar
+node_modules/
+**/node_modules/
+
+# Python
+__pycache__/
+*.pyc
+
+# Ortam (gizli) — .env.example paylaşılır, .env paylaşılmaz
+.env
+
+# OS / editör
+.DS_Store
+*.log
+npm-debug.log*
