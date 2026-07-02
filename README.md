@@ -190,3 +190,12 @@ mikro-banka/
 ├── risk-engine/        # Node — kademeli rotalama + risk skoru + onay kuyruğu (+ test)
 └── frontend/           # nginx + vanilla JS dashboard (onay kuyruğu + risk sütunu)
 ```
+
+---
+
+## 📄 Lisans / Kullanım
+
+**© 2026 sayha2304 — Tüm hakları saklıdır.**
+Bu depo yalnızca **görüntüleme ve değerlendirme** amacıyla herkese açıktır.
+Kodun tamamının veya bir kısmının izinsiz **kopyalanması, değiştirilmesi,
+dağıtılması veya herhangi bir projede kullanılması yasaktır.** Ayrıntı için `LICENSE`.
